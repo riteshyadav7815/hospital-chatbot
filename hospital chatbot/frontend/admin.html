@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — City Hospital</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <!-- ═══ LOGIN PAGE ═══ -->
+    <div class="login-page" id="loginPage">
+        <div class="login-card">
+            <div class="login-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h2>Admin Login</h2>
+            <p class="login-subtitle">City Hospital Management System</p>
+            <div class="login-field">
+                <label>Username</label>
+                <input type="text" id="loginUser" placeholder="Enter username" autocomplete="off">
+            </div>
+            <div class="login-field">
+                <label>Password</label>
+                <input type="password" id="loginPass" placeholder="Enter password">
+            </div>
+            <button class="login-btn" id="loginBtn"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="admin-layout" id="adminLayout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon"><i class="fa-solid fa-hospital"></i></div>
+                <div><h2>City Hospital</h2><span>Admin Panel</span></div>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="sidebar-link active" data-page="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+                <button class="sidebar-link" data-page="doctors"><i class="fa-solid fa-user-doctor"></i> Doctors</button>
+                <button class="sidebar-link" data-page="appointments"><i class="fa-solid fa-calendar-check"></i> Appointments</button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+
+            <!-- ═══ DASHBOARD PAGE ═══ -->
+            <div class="admin-page active" id="page-dashboard">
+                <div class="admin-topbar"><h1>Dashboard</h1></div>
+                <div class="stats-grid" id="statsGrid"></div>
+                <div class="table-card">
+                    <div class="table-header"><h2>Recent Appointments</h2></div>
+                    <div id="recentAppointments"><div class="empty-state"><i class="fa-solid fa-calendar"></i><p>Loading...</p></div></div>
+                </div>
+            </div>
+
+            <!-- ═══ DOCTORS PAGE ═══ -->
+            <div class="admin-page" id="page-doctors">
+                <div class="admin-topbar">
+                    <h1>Manage Doctors</h1>
+                    <button class="btn btn-primary" id="addDoctorBtn"><i class="fa-solid fa-plus"></i> Add Doctor</button>
+                </div>
+                <div class="table-card">
+                    <table class="admin-table">
+                        <thead><tr>
+                            <th>Doctor</th><th>Specialization</th><th>Experience</th><th>Room</th><th>Timing</th><th>Available</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody id="doctorsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ═══ APPOINTMENTS PAGE ═══ -->
+            <div class="admin-page" id="page-appointments">
+                <div class="admin-topbar"><h1>Appointments</h1></div>
+                <div class="table-card">
+                    <table class="admin-table">
+                        <thead><tr>
+                            <th>Patient</th><th>Age</th><th>Symptoms</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody id="appointmentsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══ DOCTOR MODAL ═══ -->
+    <div class="modal-overlay" id="doctorModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Doctor</h3>
+                <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="docId">
+                <div class="form-group"><label>Name</label><input type="text" id="docName" placeholder="Dr. Full Name"></div>
+                <div class="form-group"><label>Specialization</label>
+                    <select id="docSpec">
+                        <option value="General Physician">General Physician</option>
+                        <option value="Cardiologist">Cardiologist</option>
+                        <option value="Dermatologist">Dermatologist</option>
+                        <option value="Neurologist">Neurologist</option>
+                        <option value="Gastroenterologist">Gastroenterologist</option>
+                        <option value="Orthopedic">Orthopedic</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Experience (Years)</label><input type="number" id="docExp" placeholder="10"></div>
+                <div class="form-group"><label>Room No</label><input type="text" id="docRoom" placeholder="204"></div>
+                <div class="form-group"><label>Timing</label><input type="text" id="docTiming" placeholder="10:00 AM - 2:00 PM"></div>
+                <div class="form-group"><label>Contact</label><input type="text" id="docContact" placeholder="9876543210"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="modalCancelBtn" style="background:#f1f5f9;color:#64748b;">Cancel</button>
+                <button class="btn btn-primary" id="modalSaveBtn"><i class="fa-solid fa-check"></i> Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js?v=3"></script>
+</body>
+</html>
