@@ -63,7 +63,12 @@
             <div class="admin-page" id="page-doctors">
                 <div class="admin-topbar">
                     <h1>Manage Doctors</h1>
-                    <button class="btn btn-primary" id="addDoctorBtn"><i class="fa-solid fa-plus"></i> Add Doctor</button>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="deptFilter" style="padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; outline: none; background: white;">
+                            <option value="All">All Departments</option>
+                        </select>
+                        <button class="btn btn-primary" id="addDoctorBtn"><i class="fa-solid fa-plus"></i> Add Doctor</button>
+                    </div>
                 </div>
                 <div class="table-card">
                     <table class="admin-table">

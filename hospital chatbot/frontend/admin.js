@@ -146,38 +146,76 @@
     }
 
     // ─── DOCTORS ────────────────────────────────────────────
+    let allDoctors = [];
+
     async function loadDoctors() {
         try {
-            const doctors = await apiFetch('/doctors');
-            const tbody = document.getElementById('doctorsTableBody');
-
-            if (doctors.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#94a3b8;">No doctors found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = doctors.map(d => `
-                <tr>
-                    <td><strong>${esc(d.name)}</strong></td>
-                    <td>${esc(d.specialization)}</td>
-                    <td>${d.experience} yrs</td>
-                    <td>${esc(d.room_no)}</td>
-                    <td>${esc(d.timing)}</td>
-                    <td>
-                        <label class="toggle-switch">
-                            <input type="checkbox" ${d.available ? 'checked' : ''} onchange="window._toggleAvail(${d.id}, this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="btn btn-sm btn-primary" onclick="window._editDoctor(${d.id})"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="window._deleteDoctor(${d.id}, '${esc(d.name)}')"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            allDoctors = await apiFetch('/doctors');
+            populateDeptFilter(allDoctors);
+            renderDoctors();
         } catch (err) { console.error('Doctors load error:', err); }
+    }
+
+    function populateDeptFilter(doctors) {
+        const filter = document.getElementById('deptFilter');
+        if (!filter) return;
+        const currentVal = filter.value;
+        const depts = [...new Set(doctors.map(d => d.specialization))].sort();
+        filter.innerHTML = '<option value="All">All Departments</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
+        if (depts.includes(currentVal)) filter.value = currentVal;
+    }
+
+    document.getElementById('deptFilter')?.addEventListener('change', renderDoctors);
+
+    function renderDoctors() {
+        const tbody = document.getElementById('doctorsTableBody');
+        const filterVal = document.getElementById('deptFilter') ? document.getElementById('deptFilter').value : 'All';
+
+        let filtered = allDoctors;
+        if (filterVal !== 'All') {
+            filtered = allDoctors.filter(d => d.specialization === filterVal);
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#94a3b8;">No doctors found.</td></tr>';
+            return;
+        }
+
+        const grouped = {};
+        filtered.forEach(d => {
+            if (!grouped[d.specialization]) grouped[d.specialization] = [];
+            grouped[d.specialization].push(d);
+        });
+
+        let html = '';
+        for (const [dept, docs] of Object.entries(grouped)) {
+            html += `<tr><td colspan="7" style="background:#f8fafc; font-weight:700; color:#334155; padding:10px 16px; border-bottom:1px solid #e2e8f0;">${esc(dept)}</td></tr>`;
+            docs.forEach(d => {
+                const desigBadge = d.designation ? `<span style="background:#e2e8f0; color:#475569; padding:2px 8px; border-radius:12px; font-size:10px; margin-left:8px; font-weight:600; text-transform:uppercase;">${esc(d.designation)}</span>` : '';
+                html += `
+                    <tr>
+                        <td><strong>${esc(d.name)}</strong>${desigBadge}</td>
+                        <td>${esc(d.specialization)}</td>
+                        <td>${d.experience} yrs</td>
+                        <td>${esc(d.room_no)}</td>
+                        <td>${esc(d.timing)}</td>
+                        <td>
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${d.available ? 'checked' : ''} onchange="window._toggleAvail(${d.id}, this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-sm btn-primary" onclick="window._editDoctor(${d.id})"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="window._deleteDoctor(${d.id}, '${esc(d.name)}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        tbody.innerHTML = html;
     }
 
     // ─── DOCTOR MODAL ───────────────────────────────────────

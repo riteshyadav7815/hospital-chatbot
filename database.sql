@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS doctors (
     specialization TEXT NOT NULL,
     experience INTEGER DEFAULT 0,
     room_no TEXT,
-    timing TEXT DEFAULT '9:00 AM - 5:00 PM',
+    timing TEXT DEFAULT '9:00 AM - 4:00 PM (Mon-Sun)',
     available INTEGER DEFAULT 1,
     contact TEXT,
     photo TEXT,

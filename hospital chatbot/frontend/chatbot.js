@@ -27,13 +27,70 @@
         API_BASE = 'http://localhost:3000';
     }
 
+    // ─── TRANSLATIONS ───────────────────────────────────────
+    function t(key) {
+        const lang = localStorage.getItem('hc_chat_language') || state?.language || 'en';
+
+        if (!window.TRANSLATIONS) return key;
+
+        return (
+            window.TRANSLATIONS[lang]?.[key] ||
+            window.TRANSLATIONS['en']?.[key] ||
+            key
+        );
+    }
+
+    function askLanguage() {
+        let html = `<div class="hc-lang-container" style="background:var(--hc-white); padding:16px; border-radius:12px; border:1px solid var(--hc-border); margin-bottom:12px;">
+            <p style="margin-bottom:12px; font-weight:600; text-align:center;">Please select your language:</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <button class="hc-book-btn" style="padding:8px; font-size:13px; border:none; border-radius:6px; cursor:pointer; background:var(--hc-primary-light); color:var(--hc-primary-dark); font-weight:600;" onclick="window.hcSelectLang('en')">🇬🇧 English</button>
+                <button class="hc-book-btn" style="padding:8px; font-size:13px; border:none; border-radius:6px; cursor:pointer; background:var(--hc-primary-light); color:var(--hc-primary-dark); font-weight:600;" onclick="window.hcSelectLang('hi')">🇮🇳 हिन्दी</button>
+                <button class="hc-book-btn" style="padding:8px; font-size:13px; border:none; border-radius:6px; cursor:pointer; background:var(--hc-primary-light); color:var(--hc-primary-dark); font-weight:600;" onclick="window.hcSelectLang('mr')">🇮🇳 मराठी</button>
+                <button class="hc-book-btn" style="padding:8px; font-size:13px; border:none; border-radius:6px; cursor:pointer; background:var(--hc-primary-light); color:var(--hc-primary-dark); font-weight:600;" onclick="window.hcSelectLang('ta')">🇮🇳 தமிழ்</button>
+                <button class="hc-book-btn" style="padding:8px; font-size:13px; border:none; border-radius:6px; cursor:pointer; background:var(--hc-primary-light); color:var(--hc-primary-dark); font-weight:600;" onclick="window.hcSelectLang('bn')">🇮🇳 বাংলা</button>
+                <button class="hc-book-btn" style="padding:8px; font-size:13px; border:none; border-radius:6px; cursor:pointer; background:var(--hc-primary-light); color:var(--hc-primary-dark); font-weight:600;" onclick="window.hcSelectLang('gu')">🇮🇳 ગુજરાતી</button>
+            </div>
+        </div>`;
+        pushHtmlMsg(html);
+        setEnabled(false);
+    }
+
+    window.hcSelectLang = function(lang) {
+        state.language = lang;
+        localStorage.setItem('hc_chat_language', lang);
+        saveState();
+
+        // Task 2: Force Re-render After Language Change (Clear UI)
+        body.innerHTML = '';
+        state.history = [];
+        
+        input.placeholder = t('type_message');
+        
+        if (state.currentStep === 'LANG') {
+            state.currentStep = 'NAME';
+            saveState();
+            setEnabled(true);
+            botMsg(t('welcome') || "Hello! I'm your medical assistant.");
+            setTimeout(() => botMsg(t('ask_name') || "What's your name?"), 600);
+        } else {
+            setEnabled(true);
+            botMsg(t('language_updated') || "Language updated.");
+        }
+    };
+
     // ─── STATE MANAGEMENT (LocalStorage) ─────────────────────
     const STATE_KEY = 'hc_chat_state';
     
     let state = {
         isOpen: false,
-        currentStep: 'NAME',
+        currentStep: 'LANG',
+        language: localStorage.getItem('hc_chat_language') || 'en',
         userData: { name: '', age: '', gender: '', phone: '' },
+        symptoms: '',
+        followUpQuestions: [],
+        followUpAnswers: [],
+        currentQuestionIndex: 0,
         lastDiagnosis: null,
         history: [] // { type: 'user'|'bot'|'html', content: '' }
     };
@@ -46,6 +103,8 @@
                 if (parsed.userData) state = parsed;
             }
         } catch (e) {}
+        // Task 4: Fix Initial Load
+        state.language = localStorage.getItem('hc_chat_language') || 'en';
     }
 
     function saveState() {
@@ -100,6 +159,9 @@
                         </div>
                     </div>
                     <div class="hc-header-actions">
+                        <button class="hc-header-btn" id="hc-lang-toggle" title="Change Language">
+                            <i class="fa-solid fa-globe"></i>
+                        </button>
                         <button class="hc-header-btn" id="hc-clear" title="Restart">
                             <i class="fa-solid fa-rotate-right"></i>
                         </button>
@@ -130,10 +192,12 @@
         popup   = document.getElementById('hc-popup');
         body    = document.getElementById('hc-body');
         input   = document.getElementById('hc-input');
+        input.placeholder = t('type_message');
         sendBtn = document.getElementById('hc-send');
         
         document.getElementById('hc-close').addEventListener('click', () => toggle(false));
         document.getElementById('hc-clear').addEventListener('click', restart);
+        document.getElementById('hc-lang-toggle').addEventListener('click', askLanguage);
         fab.addEventListener('click', () => toggle(!state.isOpen));
 
         input.addEventListener('input', () => {
@@ -158,8 +222,12 @@
     }
 
     function restart() {
-        state.currentStep = 'NAME';
+        state.currentStep = 'LANG';
         state.userData = { name: '', age: '', gender: '', phone: '' };
+        state.symptoms = '';
+        state.followUpQuestions = [];
+        state.followUpAnswers = [];
+        state.currentQuestionIndex = 0;
         state.lastDiagnosis = null;
         state.history = [];
         body.innerHTML = '';
@@ -182,9 +250,12 @@
     }
 
     function greet() {
-        botMsg(`Hello! 👋 I'm your <strong>${esc(config.hospitalName)} AI Assistant</strong>.`);
-        botMsg("I'll analyze your symptoms and connect you with the right doctor from our hospital.");
-        botMsg("Let's begin — what is your <strong>name</strong>?");
+        if (state.currentStep === 'LANG') {
+            askLanguage();
+        } else {
+            botMsg(t('welcome') || "Hello! I'm your medical assistant.");
+            setTimeout(() => botMsg(t('ask_name') || "What's your name?"), 600);
+        }
     }
 
     function send() {
@@ -204,20 +275,20 @@
             state.userData.name = userMessage;
             state.currentStep = 'AGE';
             saveState();
-            delayBot(`Nice to meet you, <strong>${esc(state.userData.name)}</strong>! How old are you?`);
+            delayBot(t('ask_age'));
             return;
         }
 
         if (state.currentStep === 'AGE') {
             const age = parseInt(userMessage);
             if (isNaN(age) || age < 1 || age > 120) {
-                delayBot("Please enter a valid age.");
+                delayBot(t('invalid_age') || "Please enter a valid age.");
                 return;
             }
             state.userData.age = age;
             state.currentStep = 'GENDER';
             saveState();
-            delayBot('Got it. What is your <strong>gender</strong>? (Male / Female / Other)');
+            delayBot(t('ask_gender'));
             return;
         }
 
@@ -225,25 +296,53 @@
             state.userData.gender = userMessage;
             state.currentStep = 'PHONE';
             saveState();
-            delayBot('Please provide your <strong>phone number</strong> so the hospital can contact you if needed.');
+            delayBot(t('ask_phone'));
             return;
         }
 
         if (state.currentStep === 'PHONE') {
             const phoneRegex = /^[0-9\s\-+]{8,15}$/;
             if (!phoneRegex.test(userMessage)) {
-                delayBot("Please enter a valid phone number.");
+                delayBot(t('invalid_phone') || "Please enter a valid phone number.");
                 return;
             }
             state.userData.phone = userMessage;
             state.currentStep = 'SYMPTOMS';
             saveState();
-            delayBot(`Thanks, ${esc(state.userData.name)}. Now describe your <strong>symptoms</strong> in detail.`);
+            delayBot(t('ask_symptoms'));
             return;
         }
 
         if (state.currentStep === 'SYMPTOMS') {
-            await handleDiagnosis(userMessage);
+            state.symptoms = userMessage;
+            
+            // Emergency Check
+            const emergencyKeywords = ['chest pain', "can't breathe", 'heart attack', 'stroke', 'severe bleeding', 'unconscious', 'fainting'];
+            const isEmergency = emergencyKeywords.some(kw => userMessage.toLowerCase().includes(kw));
+            
+            if (isEmergency) {
+                botMsg(t('emergency_warning'));
+                state.currentStep = 'DONE';
+                saveState();
+                setTimeout(() => setEnabled(false), 600);
+                return;
+            }
+
+            await fetchFollowUpQuestions(userMessage);
+            return;
+        }
+
+        if (state.currentStep === 'FOLLOW_UP') {
+            const currentQ = state.followUpQuestions[state.currentQuestionIndex];
+            state.followUpAnswers.push({ question: currentQ.question, answer: userMessage });
+            state.currentQuestionIndex++;
+            saveState();
+
+            if (state.currentQuestionIndex < state.followUpQuestions.length) {
+                askNextQuestion();
+            } else {
+                await handleDiagnosis(state.symptoms, state.followUpAnswers);
+            }
             return;
         }
 
@@ -254,15 +353,97 @@
                 delayBot(`Thank you, <strong>${esc(state.userData.name)}</strong>! Stay healthy. Visit us at ${esc(config.hospitalName)} anytime. 🏥`);
                 setTimeout(() => setEnabled(false), 600);
             } else {
-                await handleDiagnosis(userMessage);
+                state.symptoms = state.symptoms + ". " + userMessage;
+                await fetchFollowUpQuestions(state.symptoms);
             }
             return;
         }
     }
 
+    async function fetchFollowUpQuestions(symptoms) {
+        showLoader(t("analyzing"));
+        setEnabled(false);
+
+        try {
+            const res = await fetch(`${API_BASE}/api/follow-up-questions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symptoms: symptoms,
+                    age: state.userData.age,
+                    gender: state.userData.gender,
+                    language: state.language
+                })
+            });
+
+            if (!res.ok) throw new Error("Failed to get questions");
+            const data = await res.json();
+            
+            removeLoader();
+            state.followUpQuestions = data.questions || [];
+            state.followUpAnswers = [];
+            state.currentQuestionIndex = 0;
+            
+            if (state.followUpQuestions.length > 0) {
+                state.currentStep = 'FOLLOW_UP';
+                saveState();
+                askNextQuestion();
+            } else {
+                // Fallback directly to diagnosis if no questions
+                await handleDiagnosis(symptoms, []);
+            }
+
+        } catch (error) {
+            removeLoader();
+            console.error(error);
+            // Fallback to diagnosis
+            await handleDiagnosis(symptoms, []);
+        }
+    }
+
+    window.hcScaleClick = function(val) {
+        if (!state.isOpen) return;
+        input.value = val;
+        sendBtn.disabled = false;
+        send();
+    };
+
+    window.hcFetchGeneralMedicine = async function() {
+        showLoader("Finding General Medicine doctors...");
+        try {
+            const docResponse = await fetch(`${API_BASE}/api/doctors?specialist=General Medicine`);
+            const doctors = docResponse.ok ? await docResponse.json() : [];
+            removeLoader();
+            if (doctors && doctors.length > 0) {
+                const bestDoctor = doctors[0];
+                showDoctorCard(bestDoctor);
+            } else {
+                botMsg('No General Medicine doctor currently available. Please contact the hospital directly.');
+            }
+        } catch (e) {
+            removeLoader();
+            botMsg('Error fetching doctors.');
+        }
+    };
+
+    function askNextQuestion() {
+        const q = state.followUpQuestions[state.currentQuestionIndex];
+        let html = esc(q.question);
+        
+        if (q.type === 'scale') {
+            html += `<div class="hc-scale-container">`;
+            for(let i=1; i<=10; i++) {
+                html += `<button class="hc-scale-btn" onclick="window.hcScaleClick('${i}')">${i}</button>`;
+            }
+            html += `</div>`;
+        }
+        
+        delayBot(html);
+    }
+
     // ─── DIAGNOSIS + DOCTOR MATCHING ────────────────────────
-    async function handleDiagnosis(userMessage, isRetry = false) {
-        if (!isRetry) showLoader("Analyzing symptoms...");
+    async function handleDiagnosis(symptoms, followUpAnswers, isRetry = false) {
+        if (!isRetry) showLoader(t("analyzing"));
         setEnabled(false);
 
         try {
@@ -273,7 +454,9 @@
                     name: state.userData.name,
                     age: state.userData.age,
                     gender: state.userData.gender,
-                    symptoms: userMessage
+                    symptoms: symptoms,
+                    followUpAnswers: followUpAnswers,
+                    language: state.language
                 })
             });
 
@@ -284,39 +467,48 @@
             const diagData = await diagResponse.json();
             
             state.lastDiagnosis = diagData;
-            state.lastDiagnosis.symptoms = userMessage;
+            state.lastDiagnosis.symptoms = symptoms;
             saveState();
 
             removeLoader();
             showDiagnosis(diagData);
 
-            showLoader("Finding specialists...");
-            const docResponse = await fetch(`${API_BASE}/api/doctors?specialist=${encodeURIComponent(diagData.specialist)}`);
-            const doctors = docResponse.ok ? await docResponse.json() : [];
-
-            removeLoader();
-
-            setTimeout(() => {
-                if (doctors && doctors.length > 0) {
-                    const bestDoctor = doctors[0];
-                    showDoctorCard(bestDoctor);
-                } else {
-                    botMsg('No specialist currently available for this condition. Please contact the hospital directly.');
-                }
-
+            if (diagData.availability_status === 'external_referral') {
                 setTimeout(() => {
                     state.currentStep = 'MORE_SYMPTOMS';
                     saveState();
                     botMsg('Do you have <strong>other symptoms</strong>? Type them below or type <strong>"no"</strong> to finish.');
                     setEnabled(true);
                 }, 800);
-            }, 600);
+            } else {
+                showLoader("Finding specialists...");
+                const docResponse = await fetch(`${API_BASE}/api/doctors?specialist=${encodeURIComponent(diagData.specialist)}`);
+                const doctors = docResponse.ok ? await docResponse.json() : [];
+
+                removeLoader();
+
+                setTimeout(() => {
+                    if (doctors && doctors.length > 0) {
+                        const bestDoctor = doctors[0];
+                        showDoctorCard(bestDoctor);
+                    } else {
+                        botMsg(t('no_specialist'));
+                    }
+
+                    setTimeout(() => {
+                        state.currentStep = 'MORE_SYMPTOMS';
+                        saveState();
+                        botMsg(t('ask_more_symptoms'));
+                        setEnabled(true);
+                    }, 800);
+                }, 600);
+            }
 
         } catch (error) {
             removeLoader();
             console.error('API execution error:', error);
-            showErrorRetry("We're having trouble analyzing your request. Please try again or contact the hospital.", () => {
-                handleDiagnosis(userMessage, true);
+            showErrorRetry(t('error_analyzing'), () => {
+                handleDiagnosis(symptoms, followUpAnswers, true);
             });
         }
     }
@@ -326,36 +518,73 @@
         const condition = d.condition || 'Unknown Condition';
         const severity = d.severity || 'Unknown';
         const specialist = d.specialist || 'General Physician';
-        const disclaimer = d.disclaimer || 'This is general guidance, not a medical diagnosis.';
+        const explanation = d.explanation || '';
+        const urgency = d.urgency || '';
+        const redFlags = d.red_flags || [];
+        const recommendations = d.recommendations || [];
+        const disclaimer = t('disclaimer');
 
         const sevClass = String(severity).toLowerCase().includes('low') ? 'low'
-                       : String(severity).toLowerCase().includes('high') ? 'high' : 'medium';
+                       : String(severity).toLowerCase().includes('high') || String(severity).toLowerCase().includes('emergency') ? 'high' : 'medium';
 
-        const html = `
+        let html = `
             <div class="hc-diagnosis">
-                <div class="hc-diag-header"><i class="fa-solid fa-stethoscope"></i> AI Analysis</div>
+                <div class="hc-diag-header"><i class="fa-solid fa-stethoscope"></i> ${t('diagnosis_complete')}</div>
                 <div class="hc-diag-body">
                     <div class="hc-diag-row">
-                        <span class="hc-diag-label">Condition Assessment</span>
+                        <span class="hc-diag-label">${t('likely_condition')}</span>
                         <span class="hc-diag-value">${esc(condition)}</span>
                     </div>
                     <div class="hc-diag-row">
-                        <span class="hc-diag-label">Severity Level</span>
+                        <span class="hc-diag-label">${t('severity_level')}</span>
                         <span class="hc-diag-value"><span class="hc-severity ${sevClass}">${esc(severity)}</span></span>
                     </div>
                     <div class="hc-diag-row">
-                        <span class="hc-diag-label">Recommended Specialist</span>
+                        <span class="hc-diag-label">${t('recommended_specialist')}</span>
                         <span class="hc-diag-value">${esc(specialist)}</span>
-                    </div>
+                    </div>`;
+
+        if (explanation) {
+            html += `<div class="hc-diag-row"><span class="hc-diag-label">${t('explanation')}</span><span class="hc-diag-value">${esc(explanation)}</span></div>`;
+        }
+        if (urgency) {
+            const urgClass = urgency.toLowerCase().includes('immediately') || urgency.toLowerCase().includes('er') ? 'hc-text-danger' : 'hc-text-warning';
+            html += `<div class="hc-diag-row"><span class="hc-diag-label">${t('urgency')}</span><span class="hc-diag-value ${urgClass}"><strong>${esc(urgency)}</strong></span></div>`;
+        }
+        if (redFlags.length > 0) {
+            html += `<div class="hc-diag-row"><span class="hc-diag-label" style="color:var(--hc-danger)">🚩 ${t('watch_out')}</span><ul class="hc-diag-list">`;
+            redFlags.forEach(rf => html += `<li>${esc(rf)}</li>`);
+            html += `</ul></div>`;
+        }
+        if (recommendations.length > 0) {
+            html += `<div class="hc-diag-row"><span class="hc-diag-label">${t('recommendations')}</span><ul class="hc-diag-list">`;
+            recommendations.forEach(rc => html += `<li>${esc(rc)}</li>`);
+            html += `</ul></div>`;
+        }
+
+        if (d.availability_status === 'external_referral') {
+            html += `<div class="hc-diag-row hc-alert-danger" style="background:#fee2e2; border-left:3px solid #ef4444; padding:8px; border-radius:6px; margin-top:8px;">
+                <div style="color:#b91c1c; font-weight:700; margin-bottom:4px;">⚠️ ${t('specialist_not_available')}</div>
+                <div style="font-size:12px; color:#991b1b;">${esc(d.referral_message)}</div>
+                <button class="hc-book-btn" style="margin-top:8px; background:#ef4444; width:100%; border:none; padding:8px; border-radius:6px; color:white; font-weight:bold; cursor:pointer;" onclick="window.hcFetchGeneralMedicine()">📞 ${t('book_gm_instead')}</button>
+            </div>`;
+        } else if (d.availability_status === 'referral_needed') {
+            html += `<div class="hc-diag-row hc-alert-info" style="background:#e0f2fe; border-left:3px solid #0ea5e9; padding:8px; border-radius:6px; margin-top:8px;">
+                <div style="color:#0369a1; font-weight:700; margin-bottom:4px;">ℹ️ ${t('referral_needed')}</div>
+                <div style="font-size:12px; color:#0c4a6e;">${esc(d.referral_message)}</div>
+            </div>`;
+        }
+
+        html += `
                 </div>
                 <div class="hc-diag-footer"><i class="fa-solid fa-circle-info"></i> ${esc(disclaimer)}</div>
             </div>`;
         pushHtmlMsg(html);
     }
-
+    
     function showDoctorCard(doctor) {
         const availClass = doctor.available ? 'available' : 'unavailable';
-        const availText = doctor.available ? '🟢 Available Today' : '🔴 Currently Unavailable';
+        const availText = doctor.available ? t('available_today') : t('unavailable_today');
         const avatarColor = '#6366f1';
 
         const html = `
@@ -368,11 +597,11 @@
                     </div>
                 </div>
                 <div class="hc-doc-details">
-                    <div class="hc-doc-meta"><i class="fa-solid fa-star"></i> ${esc(String(doctor.experience))} Years Experience</div>
+                    <div class="hc-doc-meta"><i class="fa-solid fa-star"></i> ${esc(String(doctor.experience))} ${t('years_exp')}</div>
                     <div class="hc-doc-meta"><i class="fa-solid fa-clock"></i> ${esc(doctor.timing)}</div>
                     <div class="hc-doc-meta hc-avail-badge ${availClass}">${availText}</div>
                 </div>
-                ${doctor.available ? `<button class="hc-book-btn" onclick="window.hcShowBookingForm(${doctor.id}, '${esc(doctor.name)}', '${esc(doctor.timing)}')"><i class="fa-solid fa-calendar-check"></i> Book Appointment</button>` : '<div class="hc-doc-unavail">Not available for booking.</div>'}
+                ${doctor.available ? `<button class="hc-book-btn" onclick="window.hcShowBookingForm(${doctor.id}, '${esc(doctor.name)}', '${esc(doctor.timing)}')"><i class="fa-solid fa-calendar-check"></i> ${t("book_appointment")}</button>` : `<div class="hc-doc-unavail">${t('not_available')}</div>`}
             </div>`;
         pushHtmlMsg(html);
     }
@@ -384,18 +613,18 @@
         
         const html = `
             <div class="hc-appt-form" id="hc-form-${doctorId}">
-                <div class="hc-appt-title"><i class="fa-solid fa-calendar-plus"></i> Book with ${esc(doctorName)}</div>
+                <div class="hc-appt-title"><i class="fa-solid fa-calendar-plus"></i> ${t('book_with')} ${esc(doctorName)}</div>
                 <div class="hc-appt-field">
-                    <label>Select Date</label>
+                    <label>${t('select_date')}</label>
                     <input type="date" class="hc-appt-date" value="${today}" min="${today}">
                 </div>
                 <div class="hc-appt-field">
-                    <label>Select Time Slot</label>
+                    <label>${t('select_time')}</label>
                     <select class="hc-appt-time">${slotsHtml}</select>
                 </div>
                 <div class="hc-appt-actions">
-                    <button class="hc-appt-confirm" onclick="window.hcConfirmBooking(${doctorId}, '${esc(doctorName)}')"><i class="fa-solid fa-check"></i> Confirm</button>
-                    <button class="hc-appt-cancel" onclick="document.getElementById('hc-form-${doctorId}').remove()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                    <button class="hc-appt-confirm" onclick="window.hcConfirmBooking(${doctorId}, '${esc(doctorName)}')"><i class="fa-solid fa-check"></i> ${t('confirm')}</button>
+                    <button class="hc-appt-cancel" onclick="document.getElementById('hc-form-${doctorId}').remove()"><i class="fa-solid fa-xmark"></i> ${t('cancel')}</button>
                 </div>
             </div>`;
         
@@ -412,12 +641,12 @@
         const time = form.querySelector('.hc-appt-time').value;
 
         if (!date || !time) {
-            botMsg('⚠️ Please select both date and time.');
+            botMsg('⚠️ ' + t('select_date_time'));
             return;
         }
 
         form.remove();
-        showLoader("Booking...");
+        showLoader(t("booking"));
         
         try {
             const res = await fetch(`${API_BASE}/api/appointments`, {
@@ -437,27 +666,26 @@
 
             removeLoader();
             if (res.ok) {
-                const result = await res.json();
                 pushHtmlMsg(`
                     <div class="hc-booking-confirm">
                         <div class="hc-confirm-icon"><i class="fa-solid fa-circle-check"></i></div>
-                        <div class="hc-confirm-title">Request Received!</div>
+                        <div class="hc-confirm-title">${t('request_received')}</div>
                         <div class="hc-confirm-details">
-                            <div><strong>Doctor:</strong> ${esc(doctorName)}</div>
-                            <div><strong>Date:</strong> ${esc(date)}</div>
-                            <div><strong>Time:</strong> ${esc(time)}</div>
+                            <div><strong>${t('doctor')}:</strong> ${esc(doctorName)}</div>
+                            <div><strong>${t('date')}:</strong> ${esc(date)}</div>
+                            <div><strong>${t('time')}:</strong> ${esc(time)}</div>
                         </div>
                     </div>`);
                 setTimeout(() => {
-                    botMsg("Your appointment request has been received. The hospital will contact you shortly.");
+                    botMsg(t('booking_confirmed_msg'));
                 }, 500);
             } else {
-                botMsg('⚠️ Failed to book appointment. Please try again.');
+                botMsg('❌ ' + t('booking_failed'));
             }
         } catch (err) {
             removeLoader();
             console.error(err);
-            botMsg('⚠️ Unable to book appointment. Please check your connection.');
+            botMsg('❌ ' + t('booking_error'));
         }
     };
 
