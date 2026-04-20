@@ -40,6 +40,7 @@
                 <button class="sidebar-link active" data-page="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
                 <button class="sidebar-link" data-page="doctors"><i class="fa-solid fa-user-doctor"></i> Doctors</button>
                 <button class="sidebar-link" data-page="appointments"><i class="fa-solid fa-calendar-check"></i> Appointments</button>
+                <button class="sidebar-link" data-page="patients"><i class="fa-solid fa-users"></i> Patients</button>
             </nav>
             <div class="sidebar-footer">
                 <button class="sidebar-logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
@@ -53,6 +54,10 @@
             <div class="admin-page active" id="page-dashboard">
                 <div class="admin-topbar"><h1>Dashboard</h1></div>
                 <div class="stats-grid" id="statsGrid"></div>
+                <div class="table-card" style="margin-bottom:16px;">
+                    <div class="table-header"><h2>High-Risk Alerts</h2></div>
+                    <div id="riskAlerts"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Loading alerts...</p></div></div>
+                </div>
                 <div class="table-card">
                     <div class="table-header"><h2>Recent Appointments</h2></div>
                     <div id="recentAppointments"><div class="empty-state"><i class="fa-solid fa-calendar"></i><p>Loading...</p></div></div>
@@ -90,6 +95,39 @@
                         </tr></thead>
                         <tbody id="appointmentsTableBody"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- ═══ PATIENTS PAGE ═══ -->
+            <div class="admin-page" id="page-patients">
+                <div class="admin-topbar">
+                    <h1>Patients</h1>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <input type="text" id="patientSearch" placeholder="Search by name, ID, phone" style="padding:8px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        <select id="riskFilter" style="padding:8px; border-radius:8px; border:1px solid #e2e8f0;">
+                            <option value="">All Risk</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                        <input type="date" id="fromDate" style="padding:8px; border-radius:8px; border:1px solid #e2e8f0;">
+                        <input type="date" id="toDate" style="padding:8px; border-radius:8px; border:1px solid #e2e8f0;">
+                        <button class="btn btn-primary" id="patientFilterBtn"><i class="fa-solid fa-filter"></i> Apply</button>
+                        <button class="btn" id="exportCsvBtn" style="background:#0ea5e9;color:#fff;"><i class="fa-solid fa-file-csv"></i> CSV</button>
+                        <button class="btn" id="exportPdfBtn" style="background:#ef4444;color:#fff;"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                    </div>
+                </div>
+                <div class="table-card">
+                    <table class="admin-table">
+                        <thead><tr>
+                            <th>Patient ID</th><th>Name</th><th>Phone</th><th>Visits</th><th>Risk</th><th>Last Visit</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody id="patientsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="table-card" style="margin-top:16px;">
+                    <div class="table-header"><h2>Patient Full Chat History</h2></div>
+                    <div id="patientHistoryPane"><div class="empty-state"><i class="fa-solid fa-notes-medical"></i><p>Select a patient to view full history.</p></div></div>
                 </div>
             </div>
         </main>

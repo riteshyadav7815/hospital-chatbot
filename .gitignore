@@ -1,6 +1,10 @@
-node_modules/
 .env
-hospital.db
-hospital.db-shm
-hospital.db-wal
+.env.*
+!.env.example
+node_modules/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+_archive/
 .DS_Store

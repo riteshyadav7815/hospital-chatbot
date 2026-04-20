@@ -7,26 +7,34 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const router = express.Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || 'hospital-chatbot-secret-key-2024';
-const ADMIN_USER = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASSWORD || 'admin123';
 
 // ─── Login ──────────────────────────────────────────────
 router.post('/login', (req, res) => {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    const ADMIN_USER = process.env.ADMIN_USERNAME;
+    const ADMIN_HASH = process.env.ADMIN_PASSWORD_HASH;
+    const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
+
+    // Reject if server not configured securely
+    if (!JWT_SECRET || !ADMIN_USER || !ADMIN_HASH) {
+        console.error('[Auth] Server missing required secure environment variables.');
+        return res.status(500).json({ error: 'Internal server configuration error.' });
+    }
+
     const { username, password } = req.body;
 
     if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password required.' });
+        return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (username !== ADMIN_USER || password !== ADMIN_PASS) {
-        return res.status(401).json({ error: 'Invalid credentials.' });
+    if (username !== ADMIN_USER || !bcrypt.compareSync(password, ADMIN_HASH)) {
+        return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate JWT token (expires in 24 hours)
-    const token = jwt.sign({ username, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+    // Generate JWT token
+    const token = jwt.sign({ username, role: 'admin' }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     console.log(`[Auth] Admin logged in: ${username}`);
     res.json({ token, message: 'Login successful.' });
 });
@@ -40,7 +48,7 @@ router.get('/check', (req, res) => {
 
     try {
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         res.json({ authenticated: true, username: decoded.username });
     } catch (err) {
         res.status(401).json({ authenticated: false });
@@ -56,7 +64,10 @@ function requireAdmin(req, res, next) {
 
     try {
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!decoded || decoded.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required.' });
+        }
         req.admin = decoded;
         next();
     } catch (err) {

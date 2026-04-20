@@ -15,24 +15,39 @@ const dotenv = require('dotenv');
 const path = require('path');
 const { Groq } = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 dotenv.config();
 
 // ─── Import DB and Routes ───────────────────────────────
-const db = require('./db');
-const { router: authRouter } = require('./routes/auth');
+const db = require('./db'); // Legacy SQLite (Docs/Appts)
+const connectDB = require('./config/db');
+connectDB(); // Initialize MongoDB
+
+const authRouter = require('./routes/authRoutes');
+const patientRouter = require('./routes/patientRoutes');
 const doctorsRouter = require('./routes/doctors');
 const appointmentsRouter = require('./routes/appointments');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
 // ─── Middleware ─────────────────────────────────────────
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 
 // Dynamic CORS based on .env ALLOWED_ORIGINS
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : ['*'];
+    : [];
+
+if (process.env.NODE_ENV === 'production' && allowedOrigins.includes('*')) {
+    throw new Error('FATAL: Insecure CORS configuration in production! ALLOWED_ORIGINS must not be "*"');
+}
 
 app.use(cors({
     origin: function (origin, callback) {
@@ -68,6 +83,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ─── Mount API Routes ───────────────────────────────────
 app.use('/api/auth', authRouter);
+app.use('/api/patient', patientRouter);
 app.use('/api/doctors', doctorsRouter);
 app.use('/api/appointments', appointmentLimiter, appointmentsRouter);
 

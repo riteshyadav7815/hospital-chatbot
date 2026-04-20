@@ -12,12 +12,12 @@
 }
 
 .hc-widget {
-    --hc-primary: #0066ff;
-    --hc-primary-dark: #0052cc;
-    --hc-primary-light: #e8f0fe;
-    --hc-primary-glow: rgba(0, 102, 255, 0.35);
+    --hc-primary: #2e7d8a;
+    --hc-primary-dark: #245f69;
+    --hc-primary-light: #e8f7f9;
+    --hc-primary-glow: rgba(46, 125, 138, 0.26);
     --hc-white: #ffffff;
-    --hc-bg: #f4f6fb;
+    --hc-bg: #f6fafb;
     --hc-border: #e2e6ef;
     --hc-text: #1e293b;
     --hc-text-secondary: #64748b;
@@ -118,7 +118,7 @@
     height: 550px;
     background: var(--hc-white);
     border-radius: var(--hc-radius);
-    box-shadow: var(--hc-shadow);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
     display: flex;
     flex-direction: column;
     transform: scale(0.4) translateY(40px);
@@ -136,7 +136,10 @@
 
 /* ---------- Header ---------- */
 .hc-header {
-    background: linear-gradient(135deg, var(--hc-primary), #2563eb);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(135deg, var(--hc-primary), #2f8fa1);
     color: var(--hc-white);
     padding: 16px 18px;
     display: flex;
@@ -233,7 +236,7 @@
     font-size: 13px;
     line-height: 1.55;
     word-wrap: break-word;
-    animation: cb-fadeIn 0.25s ease;
+    animation: cb-fadeIn 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @keyframes cb-fadeIn {
@@ -244,7 +247,7 @@
 .hc-msg.bot {
     background: var(--hc-white);
     color: var(--hc-text);
-    border-radius: 4px 14px 14px 14px;
+    border-radius: 8px 16px 16px 16px;
     align-self: flex-start;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     border: 1px solid var(--hc-border);
@@ -253,7 +256,7 @@
 .hc-msg.user {
     background: linear-gradient(135deg, var(--hc-primary), #2563eb);
     color: var(--hc-white);
-    border-radius: 14px 4px 14px 14px;
+    border-radius: 16px 8px 16px 16px;
     align-self: flex-end;
     box-shadow: 0 2px 8px var(--hc-primary-glow);
 }
@@ -721,6 +724,130 @@
     margin-top: 6px;
 }
 
+/* ---------- Auth card ---------- */
+.hc-auth-card {
+    background: var(--hc-white);
+    border: 1px solid var(--hc-border);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    align-self: stretch;
+}
+
+.hc-auth-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--hc-text);
+}
+
+.hc-auth-subtitle {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--hc-text-secondary);
+}
+
+.hc-auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.hc-auth-tab {
+    border: 1px solid var(--hc-border);
+    background: #f8fafc;
+    color: var(--hc-text-secondary);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hc-auth-tab.active {
+    border-color: var(--hc-primary);
+    color: var(--hc-primary);
+    background: var(--hc-primary-light);
+}
+
+.hc-auth-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.hc-auth-input {
+    border: 1px solid var(--hc-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    background: #fff;
+    outline: none;
+}
+
+.hc-auth-input:focus {
+    border-color: var(--hc-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.hc-auth-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, var(--hc-primary), #2563eb);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.hc-auth-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.hc-date-divider {
+    align-self: center;
+    background: #e7eef2;
+    color: #5b6b79;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin: 4px 0;
+}
+
+.hc-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.hc-chip {
+    border: 1px solid #c4dbe0;
+    background: #fff;
+    color: var(--hc-primary-dark);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hc-chip:hover {
+    background: var(--hc-primary-light);
+}
+
+.hc-system-time {
+    text-align: center;
+    font-size: 10px;
+    color: var(--hc-text-muted);
+    margin-top: 6px;
+}
+
 /* ============================================
    MOBILE RESPONSIVE
    ============================================ */
@@ -747,8 +874,78 @@
 }
 
 /* ============================================
+   VOICE BUTTONS (STT mic + TTS toggle)
+   ============================================ */
+.hc-mic-btn {
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 50%;
+    transition: background 0.2s, transform 0.2s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.hc-mic-btn:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+.hc-mic-btn.recording {
+    background: #ff4444;
+    animation: hc-pulse 1s infinite;
+    border-radius: 50%;
+}
+
+@keyframes hc-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,68,68,0.7); }
+    50%      { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(255,68,68,0); }
+}
+
+.hc-tts-toggle {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 50%;
+    transition: background 0.2s;
+    color: var(--hc-white);
+}
+
+.hc-tts-toggle:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+.hc-voice-indicator {
+    padding: 8px;
+    background: #fff3cd;
+    color: #856404;
+    text-align: center;
+    font-size: 13px;
+    border-radius: 6px;
+    margin: 4px 0;
+    animation: cb-fadeIn 0.25s ease;
+}
+
+/* ============================================
+   UTILITY CLASSES (cleaned from corrupt data)
+   ============================================ */
+.hc-scale-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.hc-scale-btn { width: 34px; height: 34px; border: 1px solid var(--hc-primary); background: transparent; color: var(--hc-primary); border-radius: 6px; cursor: pointer; font-weight: 600; font-family: var(--hc-font); transition: all 0.2s; }
+.hc-scale-btn:hover { background: var(--hc-primary); color: var(--hc-white); }
+.hc-diag-list { margin: 4px 0 0 16px; padding: 0; font-size: 12.5px; color: var(--hc-text); }
+.hc-diag-list li { margin-bottom: 3px; }
+.hc-text-danger { color: var(--hc-danger) !important; }
+.hc-text-warning { color: var(--hc-warning) !important; }
+
+/* ============================================
    GOOGLE FONTS IMPORT (Inter)
    ============================================ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-\ n . h c - s c a l e - c o n t a i n e r   {   d i s p l a y :   f l e x ;   f l e x - w r a p :   w r a p ;   g a p :   6 p x ;   m a r g i n - t o p :   1 0 p x ;   } \ n . h c - s c a l e - b t n   {   w i d t h :   3 4 p x ;   h e i g h t :   3 4 p x ;   b o r d e r :   1 p x   s o l i d   v a r ( - - h c - p r i m a r y ) ;   b a c k g r o u n d :   t r a n s p a r e n t ;   c o l o r :   v a r ( - - h c - p r i m a r y ) ;   b o r d e r - r a d i u s :   6 p x ;   c u r s o r :   p o i n t e r ;   f o n t - w e i g h t :   6 0 0 ;   f o n t - f a m i l y :   v a r ( - - h c - f o n t ) ;   t r a n s i t i o n :   a l l   0 . 2 s ;   } \ n . h c - s c a l e - b t n : h o v e r   {   b a c k g r o u n d :   v a r ( - - h c - p r i m a r y ) ;   c o l o r :   v a r ( - - h c - w h i t e ) ;   } \ n . h c - d i a g - l i s t   {   m a r g i n :   4 p x   0   0   1 6 p x ;   p a d d i n g :   0 ;   f o n t - s i z e :   1 2 . 5 p x ;   c o l o r :   v a r ( - - h c - t e x t ) ;   } \ n . h c - d i a g - l i s t   l i   {   m a r g i n - b o t t o m :   3 p x ;   } \ n . h c - t e x t - d a n g e r   {   c o l o r :   v a r ( - - h c - d a n g e r )   ! i m p o r t a n t ;   } \ n . h c - t e x t - w a r n i n g   {   c o l o r :   v a r ( - - h c - w a r n i n g )   ! i m p o r t a n t ;   } \ n  
- 

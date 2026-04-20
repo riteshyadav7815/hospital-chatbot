@@ -1,5 +1,16 @@
 window.TRANSLATIONS = {
   en: {
+    greeting: "Hello! I'm your medical assistant. Please select your language.",
+    askName: "What's your name?",
+    askAge: "How old are you?",
+    askGender: "What's your gender? (Male/Female/Other)",
+    askPhone: "Please provide your phone number",
+    askSymptoms: "Please describe your symptoms in detail",
+    askFollowUp: "Thanks! I need to ask a few more questions to give you an accurate assessment.",
+    diagnosing: "Analyzing your symptoms... 🔍",
+    emergency: "⚠️ Your symptoms may require IMMEDIATE medical attention.",
+    bookAppointment: "Book Appointment",
+    thankYou: "Thank you!",
     welcome: "Hello! I'm your medical assistant. Please select your language.",
     ask_name: "What's your name?",
     ask_age: "How old are you?",
@@ -55,6 +66,17 @@ window.TRANSLATIONS = {
     error_analyzing: "We're having trouble analyzing your request. Please try again or contact the hospital."
   },
   hi: {
+    greeting: "Hello! I'm your medical assistant. Please select your language.", // TODO: translate
+    askName: "What's your name?", // TODO: translate
+    askAge: "How old are you?", // TODO: translate
+    askGender: "What's your gender? (Male/Female/Other)", // TODO: translate
+    askPhone: "Please provide your phone number", // TODO: translate
+    askSymptoms: "Please describe your symptoms in detail", // TODO: translate
+    askFollowUp: "Thanks! I need to ask a few more questions to give you an accurate assessment.", // TODO: translate
+    diagnosing: "Analyzing your symptoms... 🔍", // TODO: translate
+    emergency: "⚠️ Your symptoms may require IMMEDIATE medical attention.", // TODO: translate
+    bookAppointment: "Book Appointment", // TODO: translate
+    thankYou: "Thank you!", // TODO: translate
     welcome: "नमस्ते! मैं आपकी चिकित्सा सहायक हूँ। कृपया अपनी भाषा चुनें।",
     ask_name: "आपका नाम क्या है?",
     ask_age: "आपकी उम्र क्या है?",
@@ -110,6 +132,17 @@ window.TRANSLATIONS = {
     error_analyzing: "हमें आपके अनुरोध का विश्लेषण करने में समस्या हो रही है। कृपया पुनः प्रयास करें या अस्पताल से संपर्क करें।"
   },
   mr: {
+    greeting: "Hello! I'm your medical assistant. Please select your language.", // TODO: translate
+    askName: "What's your name?", // TODO: translate
+    askAge: "How old are you?", // TODO: translate
+    askGender: "What's your gender? (Male/Female/Other)", // TODO: translate
+    askPhone: "Please provide your phone number", // TODO: translate
+    askSymptoms: "Please describe your symptoms in detail", // TODO: translate
+    askFollowUp: "Thanks! I need to ask a few more questions to give you an accurate assessment.", // TODO: translate
+    diagnosing: "Analyzing your symptoms... 🔍", // TODO: translate
+    emergency: "⚠️ Your symptoms may require IMMEDIATE medical attention.", // TODO: translate
+    bookAppointment: "Book Appointment", // TODO: translate
+    thankYou: "Thank you!", // TODO: translate
     welcome: "नमस्कार! मी तुमची वैद्यकीय सहाय्यक आहे. कृपया तुमची भाषा निवडा.",
     ask_name: "तुमचे नाव काय आहे?",
     ask_age: "तुमचे वय किती आहे?",
@@ -141,6 +174,17 @@ window.TRANSLATIONS = {
     invalid_phone: "कृपया वैध फोन नंबर प्रविष्ट करा."
   },
   ta: {
+    greeting: "Hello! I'm your medical assistant. Please select your language.", // TODO: translate
+    askName: "What's your name?", // TODO: translate
+    askAge: "How old are you?", // TODO: translate
+    askGender: "What's your gender? (Male/Female/Other)", // TODO: translate
+    askPhone: "Please provide your phone number", // TODO: translate
+    askSymptoms: "Please describe your symptoms in detail", // TODO: translate
+    askFollowUp: "Thanks! I need to ask a few more questions to give you an accurate assessment.", // TODO: translate
+    diagnosing: "Analyzing your symptoms... 🔍", // TODO: translate
+    emergency: "⚠️ Your symptoms may require IMMEDIATE medical attention.", // TODO: translate
+    bookAppointment: "Book Appointment", // TODO: translate
+    thankYou: "Thank you!", // TODO: translate
     welcome: "வணக்கம்! நான் உங்கள் மருத்துவ உதவியாளர். உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்.",
     ask_name: "உங்கள் பெயர் என்ன?",
     ask_age: "உங்கள் வயது என்ன?",
@@ -172,6 +216,17 @@ window.TRANSLATIONS = {
     invalid_phone: "தயவுசெய்து சரியான தொலைபேசி எண்ணை உள்ளிடவும்."
   },
   bn: {
+    greeting: "Hello! I'm your medical assistant. Please select your language.", // TODO: translate
+    askName: "What's your name?", // TODO: translate
+    askAge: "How old are you?", // TODO: translate
+    askGender: "What's your gender? (Male/Female/Other)", // TODO: translate
+    askPhone: "Please provide your phone number", // TODO: translate
+    askSymptoms: "Please describe your symptoms in detail", // TODO: translate
+    askFollowUp: "Thanks! I need to ask a few more questions to give you an accurate assessment.", // TODO: translate
+    diagnosing: "Analyzing your symptoms... 🔍", // TODO: translate
+    emergency: "⚠️ Your symptoms may require IMMEDIATE medical attention.", // TODO: translate
+    bookAppointment: "Book Appointment", // TODO: translate
+    thankYou: "Thank you!", // TODO: translate
     welcome: "নমস্কার! আমি আপনার চিকিৎসা সহায়ক। অনুগ্রহ করে আপনার ভাষা নির্বাচন করুন।",
     ask_name: "আপনার নাম কি?",
     ask_age: "আপনার বয়স কত?",
@@ -203,6 +258,17 @@ window.TRANSLATIONS = {
     invalid_phone: "অনুগ্রহ করে একটি সঠিক ফোন নম্বর লিখুন।"
   },
   gu: {
+    greeting: "Hello! I'm your medical assistant. Please select your language.", // TODO: translate
+    askName: "What's your name?", // TODO: translate
+    askAge: "How old are you?", // TODO: translate
+    askGender: "What's your gender? (Male/Female/Other)", // TODO: translate
+    askPhone: "Please provide your phone number", // TODO: translate
+    askSymptoms: "Please describe your symptoms in detail", // TODO: translate
+    askFollowUp: "Thanks! I need to ask a few more questions to give you an accurate assessment.", // TODO: translate
+    diagnosing: "Analyzing your symptoms... 🔍", // TODO: translate
+    emergency: "⚠️ Your symptoms may require IMMEDIATE medical attention.", // TODO: translate
+    bookAppointment: "Book Appointment", // TODO: translate
+    thankYou: "Thank you!", // TODO: translate
     welcome: "નમસ્તે! હું તમારી તબીબી સહાયક છું. કૃપા કરીને તમારી ભાષા પસંદ કરો.",
     ask_name: "તમારું નામ શું છે?",
     ask_age: "તમારી ઉંમર કેટલી છે?",
