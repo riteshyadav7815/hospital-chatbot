@@ -1,0 +1,20 @@
+{
+  "name": "ai-medical-chatbot-backend",
+  "version": "1.0.0",
+  "description": "Backend for AI Medical Chatbot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.3.2",
+    "groq-sdk": "^0.3.3",
+    "jsonwebtoken": "^9.0.3"
+  }
+}
