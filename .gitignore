@@ -1,6 +1,7 @@
-node_modules/
+node_modules
+backend/node_modules
 .env
-hospital.db
-hospital.db-shm
-hospital.db-wal
+backend/.env
+backend/hospital.db
+*.log
 .DS_Store
