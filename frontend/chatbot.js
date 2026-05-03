@@ -12,7 +12,7 @@
         themeColor: "#0066ff"
     };
 
-    let API_BASE = 'http://localhost:3000';
+  let API_BASE = window.location.origin;
     let backendConnectionVerified = false;
     const FALLBACK_TEXT = {
         welcome: "Hello! I'm your medical assistant.",
