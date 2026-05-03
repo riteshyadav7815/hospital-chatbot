@@ -11,7 +11,9 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-// Emergency detection
+/**
+ * Emergency Detection
+ */
 function isEmergency(text) {
   if (!text) return false;
 
@@ -19,20 +21,64 @@ function isEmergency(text) {
 
   const emergencyKeywords = [
     "vomiting blood",
+    "coughing blood",
     "unconscious",
     "seizure",
     "not breathing",
-    "severe chest pain",
     "cannot breathe",
-    "heavy bleeding",
-    "stroke",
+    "difficulty breathing",
+    "severe chest pain",
     "heart attack",
-    "fainted"
+    "stroke",
+    "heavy bleeding",
+    "fainted",
+    "fainting",
+    "blood in stool",
+    "black stool",
+    "severe allergic reaction",
+    "anaphylaxis",
+    "suicidal thoughts",
+    "overdose",
+    "poisoning",
+    "paralysis",
+    "unable to speak",
+    "loss of vision",
+    "severe burns"
   ];
 
-  return emergencyKeywords.some((word) => t.includes(word));
+  return emergencyKeywords.some((word) =>
+    t.includes(word)
+  );
 }
 
+/**
+ * Safe JSON Parser
+ */
+function safeParseJSON(content) {
+  try {
+    if (content.startsWith("```json")) {
+      content = content
+        .replace(/^```json/i, "")
+        .replace(/```$/i, "")
+        .trim();
+    }
+
+    if (content.startsWith("```")) {
+      content = content
+        .replace(/^```/i, "")
+        .replace(/```$/i, "")
+        .trim();
+    }
+
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Triage Route
+ */
 router.post("/", async (req, res) => {
   try {
     const { text, age, gender } = req.body;
@@ -43,23 +89,41 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Emergency check
+    /**
+     * Emergency Fast Path
+     */
     if (isEmergency(text)) {
       return res.json({
         emergency: true,
         condition: "Medical Emergency",
-        explanation:
-          "Your symptoms may indicate a serious emergency condition requiring immediate medical care.",
-        severity: "high",
-        specialist: "Emergency Care",
-        urgency: "Go to ER immediately",
+        what_it_is:
+          "Your symptoms may indicate an emergency medical condition.",
+        why_it_happens:
+          "Some symptoms can signal serious internal problems requiring urgent care.",
+        possible_causes: [
+          "Internal bleeding",
+          "Heart problem",
+          "Neurological event",
+          "Severe allergic reaction"
+        ],
+        severity: "emergency",
+        specialist: "Emergency Medicine",
+        urgency: "Go to emergency immediately",
         red_flags: [
-          "Emergency symptoms detected"
+          "Life-threatening symptoms detected"
+        ],
+        self_care: [
+          "Do not drive yourself if unstable",
+          "Call emergency services",
+          "Stay with someone nearby"
         ],
         recommendations: [
-          "Do not wait",
-          "Go to emergency immediately",
-          "Call emergency support if needed"
+          "Go to nearest ER now"
+        ],
+        tests_to_expect: [
+          "Blood tests",
+          "Imaging",
+          "ECG"
         ],
         doctor: null,
         disclaimer:
@@ -67,33 +131,85 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // AI medical triage
+    /**
+     * AI Prompt
+     */
     const systemPrompt = `
-You are an experienced hospital triage assistant.
+You are an advanced hospital triage AI.
 
-Analyze symptoms and return ONLY JSON.
+Analyze symptoms like a professional hospital pre-diagnosis assistant.
 
-Rules:
-1. Explain what the likely condition is.
-2. Explain why these symptoms may happen.
-3. Explain possible causes.
-4. Explain what patient can do at home first.
-5. Explain when to seek doctor.
-6. Give medical red flags.
-7. Choose specialist.
+Return ONLY valid JSON.
 
-Return ONLY this JSON:
+JSON FORMAT:
 
 {
   "condition": "",
+  "what_it_is": "",
+  "why_it_happens": "",
   "explanation": "",
   "possible_causes": [],
-  "severity": "low|moderate|high",
+  "severity": "low|moderate|high|emergency",
   "specialist": "",
   "urgency": "",
   "red_flags": [],
-  "recommendations": []
+  "self_care": [],
+  "recommendations": [],
+  "tests_to_expect": []
 }
+
+SPECIALIST MUST BE ONLY ONE OF:
+
+[
+"General Medicine",
+"Emergency Medicine",
+"Cardiology",
+"Neurology",
+"Neurosurgery",
+"Orthopaedics",
+"Physiotherapy",
+"Pulmonology",
+"Gastroenterology",
+"Hepatology",
+"Nephrology",
+"Urology",
+"Endocrinology",
+"Dermatology",
+"Obstetrics & Gynecology",
+"Fertility Medicine",
+"Paediatrics",
+"Neonatology",
+"ENT",
+"Audiology",
+"Ophthalmology",
+"Psychiatry",
+"Psychology",
+"Dental",
+"Oral Surgery",
+"General Surgery",
+"Laparoscopic Surgery",
+"Oncology",
+"Radiation Oncology",
+"Rheumatology",
+"Infectious Disease",
+"Allergy & Immunology",
+"Hematology",
+"Vascular Surgery",
+"Plastic Surgery",
+"Pain Management",
+"Sleep Medicine",
+"Nutrition & Dietetics",
+"Sexual Health",
+"Geriatrics",
+"Sports Medicine"
+]
+
+If unclear:
+use "General Medicine"
+
+No markdown.
+No extra text.
+JSON only.
 `;
 
     const userPrompt = `
@@ -104,52 +220,94 @@ Symptoms:
 ${text}
 `;
 
-    const aiResponse = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: userPrompt
-        }
-      ],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.2
-    });
+    /**
+     * AI Call
+     */
+    const aiResponse =
+      await groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: userPrompt
+          }
+        ],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.2
+      });
 
     let content =
       aiResponse.choices[0].message.content.trim();
 
-    if (content.startsWith("```json")) {
-      content = content
-        .replace(/^```json/i, "")
-        .replace(/```$/i, "")
-        .trim();
+    let diagnosis = safeParseJSON(content);
+
+    /**
+     * Fallback if AI breaks JSON
+     */
+    if (!diagnosis) {
+      diagnosis = {
+        condition: "Unclear Condition",
+        what_it_is:
+          "Symptoms need doctor evaluation.",
+        why_it_happens:
+          "Many conditions can cause these symptoms.",
+        explanation:
+          "A doctor evaluation is recommended.",
+        possible_causes: [],
+        severity: "moderate",
+        specialist: "General Medicine",
+        urgency: "Visit doctor within 24–48 hours",
+        red_flags: [],
+        self_care: [
+          "Rest",
+          "Stay hydrated"
+        ],
+        recommendations: [
+          "Consult doctor"
+        ],
+        tests_to_expect: []
+      };
     }
 
-    const diagnosis = JSON.parse(content);
+    /**
+     * Normalize department
+     */
+    const department =
+      normalizeDepartment(
+        diagnosis.specialist
+      );
 
-    // Normalize department
-    const department = normalizeDepartment(
-      diagnosis.specialist
-    );
+    /**
+     * Assign doctor
+     */
+    const doctor =
+      getDoctor(department);
 
-    // Assign doctor
-    const doctor = getDoctor(department);
-
-    // Final enriched response
+    /**
+     * Final response
+     */
     const finalResponse = {
       emergency: false,
       condition: diagnosis.condition,
+      what_it_is: diagnosis.what_it_is,
+      why_it_happens: diagnosis.why_it_happens,
       explanation: diagnosis.explanation,
-      possible_causes: diagnosis.possible_causes || [],
+      possible_causes:
+        diagnosis.possible_causes || [],
       severity: diagnosis.severity,
       specialist: department,
       urgency: diagnosis.urgency,
-      red_flags: diagnosis.red_flags || [],
-      recommendations: diagnosis.recommendations || [],
+      red_flags:
+        diagnosis.red_flags || [],
+      self_care:
+        diagnosis.self_care || [],
+      recommendations:
+        diagnosis.recommendations || [],
+      tests_to_expect:
+        diagnosis.tests_to_expect || [],
       doctor: doctor || null,
       referral_message: doctor
         ? null
@@ -164,7 +322,8 @@ ${text}
     console.error("[Triage Error]", err);
 
     return res.status(500).json({
-      error: "Failed to process symptoms"
+      error:
+        "Failed to process symptoms"
     });
   }
 });
