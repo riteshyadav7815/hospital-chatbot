@@ -8,15 +8,19 @@
  *  - Appointment booking API
  *  - Admin authentication
  */
+const dotenv = require('dotenv');
+dotenv.config();
+const triageRoute = require("./routes/triage");
 
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
+
 const path = require('path');
 const { Groq } = require('groq-sdk');
 const rateLimit = require('express-rate-limit');
+console.log("API KEY:", process.env.GROQ_API_KEY);
 
-dotenv.config();
+
 
 // ─── Import DB and Routes ───────────────────────────────
 const db = require('./db');
@@ -70,6 +74,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 app.use('/api/auth', authRouter);
 app.use('/api/doctors', doctorsRouter);
 app.use('/api/appointments', appointmentLimiter, appointmentsRouter);
+app.use("/api/triage", triageRoute);
 
 // ─── Health Check ───────────────────────────────────────
 app.get('/health', (req, res) => {
@@ -78,54 +83,42 @@ app.get('/health', (req, res) => {
 
 // ─── Symptom → Specialization Mapping ───────────────────
 const SYMPTOM_MAP = [
-    {
-        keywords: ['chest pain'],
-        disease: "Heart Issue",
-        probability: "75%",
-        severity: "High",
-        advice: "Seek immediate medical attention.",
-        specialization: "Cardiologist"
-    },
-    {
-        keywords: ['skin rash'],
-        disease: "Skin Allergy",
-        probability: "75%",
-        severity: "Low",
-        advice: "Avoid allergen, antihistamine.",
-        specialization: "Dermatologist"
-    },
-    {
-        keywords: ['headache'],
-        disease: "Migraine",
-        probability: "70%",
-        severity: "Medium",
-        advice: "Rest in dark room, hydrate.",
-        specialization: "Neurologist"
-    },
-    {
-        keywords: ['stomach pain'],
-        disease: "Gastritis",
-        probability: "65%",
-        severity: "Medium",
-        advice: "Avoid spicy food, consult doctor.",
-        specialization: "Gastroenterologist"
-    },
-    {
-        keywords: ['bone pain', 'fracture', 'joint pain'],
-        disease: "Musculoskeletal Issue",
-        probability: "70%",
-        severity: "Medium",
-        advice: "Rest the affected area, apply ice. See a doctor.",
-        specialization: "Orthopedic"
-    },
-    {
-        keywords: ['cold', 'cough', 'fever'],
-        disease: "Common Cold",
-        probability: "80%",
-        severity: "Low",
-        advice: "Rest, hydrate, paracetamol if needed.",
-        specialization: "General Physician"
-    }
+  {
+    keywords: ['chest pain', 'heart pain', 'pressure in chest'],
+    disease: "Possible Heart Issue",
+    severity: "high",
+    specialization: "Cardiologist"
+  },
+  {
+    keywords: ['vomiting blood', 'blood vomit', 'black stool'],
+    disease: "Upper GI Bleeding",
+    severity: "high",
+    specialization: "Gastroenterologist"
+  },
+  {
+    keywords: ['fracture', 'broken leg', 'broken arm', 'fell down', 'cannot walk', 'bone injury'],
+    disease: "Fracture / Bone Injury",
+    severity: "high",
+    specialization: "Orthopaedics"
+  },
+  {
+    keywords: ['fever', 'cold', 'cough', 'body ache'],
+    disease: "Viral Infection",
+    severity: "low",
+    specialization: "General Medicine"
+  },
+  {
+    keywords: ['headache', 'migraine', 'dizziness'],
+    disease: "Neurological Issue",
+    severity: "moderate",
+    specialization: "Neurologist"
+  },
+  {
+    keywords: ['skin rash', 'itching', 'allergy'],
+    disease: "Skin Allergy",
+    severity: "low",
+    specialization: "Skin & VD"
+  }
 ];
 
 /** Match symptoms to a known condition and specialization */
@@ -227,9 +220,13 @@ app.post('/api/follow-up-questions', diagnoseLimiter, async (req, res) => {
             try {
                 const systemPrompt = `You are a friendly hospital health assistant.
 Your tone is warm, simple, and human. Use short sentences. Avoid medical jargon.
+
 Based on the patient's symptoms, generate up to 3 quick follow-up questions that are actually relevant.
+
 IMPORTANT: The user speaks ${langName.toUpperCase()}. Write the questions in ${langName.toUpperCase()}.
+
 If no follow-up is needed, return an empty array.
+
 Return ONLY valid JSON with this EXACT structure:
 {
   "questions": [
@@ -238,7 +235,7 @@ Return ONLY valid JSON with this EXACT structure:
     { "id": "q3", "question": "...", "type": "text" }
   ]
 }
-Return JSON with questions translated to ${langName.toUpperCase()}.
+
 No markdown. No explanation. Only JSON.`;
 
                 const userPrompt = `Patient Age: ${age || 'Unknown'}, Gender: ${gender || 'Unknown'}\nSymptoms: ${symptoms}`;
@@ -324,28 +321,49 @@ app.post('/api/diagnose', diagnoseLimiter, async (req, res) => {
                     condition: "Unknown Condition",
                     explanation: "We could not determine a specific condition based on the provided symptoms.",
                     severity: "moderate",
-                    specialist: "General Physician",
+                   specialist: "General Medicine",
                     red_flags: ["Seek immediate help if symptoms become severe."],
                     recommendations: ["Consult a doctor for a proper evaluation."],
                     urgency: "See doctor within 24h"
                 };
             } else {
                 try {
-                    const systemPrompt = `You are an expert medical AI assistant.
-IMPORTANT Medical Safety: Return ONLY valid JSON with these EXACT keys:
+                    const systemPrompt = `
+You are a hospital triage AI.
+
+STRICT RULES:
+
+1. ONLY choose specialist from this list:
+["General Medicine","Orthopaedics","ENT","Ophthalmology","Paediatrics","Psychiatry","Dental","Skin & VD","General Surgery"]
+
+2. If symptoms are unclear → ALWAYS return "General Medicine"
+
+3. NEVER suggest specialists outside this list.
+
+4. Severity rules:
+- fracture, bleeding → high
+- fever, cold → low
+- pain → moderate
+
+5. Return ONLY valid JSON:
+
 {
-  "condition": "Likely condition name",
-  "explanation": "2-3 sentence reasoning based on symptoms and follow-ups",
-  "severity": "low|moderate|high|emergency",
-  "specialist": "Correct specialist name (e.g. Cardiologist)",
-  "red_flags": ["warning 1", "warning 2"],
-  "recommendations": ["advice 1", "advice 2"],
-  "urgency": "Can wait for appointment | See doctor within 24h | Go to ER immediately"
+  "condition": "",
+  "explanation": "",
+  "severity": "low|moderate|high",
+  "specialist": "",
+  "red_flags": [],
+  "recommendations": [],
+  "urgency": ""
 }
-Respond entirely in ${langName.toUpperCase()} language. The patient speaks ${langName.toUpperCase()}.
-All fields (condition, explanation, red_flags, recommendations, urgency) must be in ${langName.toUpperCase()}.
-Only keep the "specialist" and "severity" fields in exact English (for database matching and system routing).
-No markdown. No explanation. Only JSON.`;
+
+IMPORTANT:
+- Write all fields in ${langName.toUpperCase()}
+- BUT keep "specialist" and "severity" in English
+- No markdown
+- No explanation
+- Only JSON
+`;
 
                     const userPrompt = `Patient Age: ${age}, Gender: ${gender}\n${context}\nAnalyze the patient's information and return the exact JSON structure required.`;
 
@@ -365,16 +383,34 @@ No markdown. No explanation. Only JSON.`;
                     } else if (content.startsWith("```")) {
                         content = content.replace(/^```/i, "").replace(/```$/i, "").trim();
                     }
+diagnosis = JSON.parse(content);
 
-                    diagnosis = JSON.parse(content);
-                    console.log(`[Diagnose] Groq diagnosis: ${diagnosis.condition}`);
+// ✅ SAFETY FILTER (ADD THIS)
+const VALID_DEPARTMENTS = [
+  "General Medicine",
+  "Orthopaedics",
+  "ENT",
+  "Ophthalmology",
+  "Paediatrics",
+  "Psychiatry",
+  "Dental",
+  "Skin & VD",
+  "General Surgery"
+];
+
+if (!VALID_DEPARTMENTS.includes(diagnosis.specialist)) {
+  console.log("⚠️ Invalid specialist from AI:", diagnosis.specialist);
+  diagnosis.specialist = "General Medicine";
+}
+
+console.log(`[Diagnose] Groq diagnosis: ${diagnosis.condition}`);
                 } catch (groqErr) {
                     console.error('[Diagnose] Groq error:', groqErr.message || groqErr);
                     diagnosis = {
                         condition: "Unknown Condition",
                         explanation: "An error occurred during AI analysis. Please consult a doctor.",
                         severity: "moderate",
-                        specialist: "General Physician",
+                        specialist: "General Medicine",
                         red_flags: ["Seek immediate help if symptoms become severe."],
                         recommendations: ["Consult a doctor for a proper evaluation."],
                         urgency: "See doctor within 24h"
@@ -383,38 +419,100 @@ No markdown. No explanation. Only JSON.`;
             }
         }
 
-        // Add standard disclaimer
-        diagnosis.disclaimer = "This chatbot provides general guidance only and is not a medical diagnosis.";
-
-        const originalSpecialist = normalizeSpecialization(diagnosis.specialist);
-        const UNAVAILABLE_SPECIALISTS = ['Cardiologist', 'Neurologist', 'Nephrologist', 'Urologist', 'Oncologist', 'Pulmonologist', 'Gastroenterologist', 'Endocrinologist'];
         
-        if (UNAVAILABLE_SPECIALISTS.includes(originalSpecialist)) {
-            const isHighSeverity = diagnosis.severity.toLowerCase().includes('high') || diagnosis.severity.toLowerCase().includes('emergency');
-            if (isHighSeverity) {
-                diagnosis.availability_status = "external_referral";
-                diagnosis.referral_message = `Our hospital does not have a ${originalSpecialist} specialist. For this condition, we recommend visiting a multi-specialty hospital. In case of emergency, call 102/108 immediately.`;
-                diagnosis.specialist = null;
-            } else {
-                diagnosis.availability_status = "referral_needed";
-                diagnosis.referral_message = `We don't have a dedicated ${originalSpecialist} specialist, but our General Medicine OPD can provide initial assessment.`;
-                diagnosis.specialist = "General Medicine";
-            }
-        } else {
-            const docExists = db.getAllDoctors().some(d => d.specialization === originalSpecialist);
-            if (docExists || originalSpecialist === 'General Medicine') {
-                 diagnosis.availability_status = "available";
-                 diagnosis.referral_message = null;
-                 diagnosis.specialist = originalSpecialist;
-            } else {
-                 diagnosis.availability_status = "referral_needed";
-                 diagnosis.referral_message = `We couldn't find a direct match for ${originalSpecialist}, but our General Medicine OPD can help.`;
-                 diagnosis.specialist = "General Medicine";
-            }
-        }
+        // ─── Safety + Doctor Mapping ─────────────────────────────
 
-        // ─── Step 3: Return diagnosis ───────────
-        res.json(diagnosis);
+diagnosis.disclaimer =
+  "This chatbot provides general guidance only and is not a medical diagnosis.";
+
+// STEP 1: Take AI specialist
+let originalSpecialist = diagnosis.specialist || "General Medicine";
+
+// STEP 2: Allowed hospital departments
+const VALID_DEPARTMENTS = [
+  "General Medicine",
+  "Orthopaedics",
+  "ENT",
+  "Ophthalmology",
+  "Paediatrics",
+  "Psychiatry",
+  "Dental",
+  "Skin & VD",
+  "General Surgery"
+];
+
+// STEP 3: Force fallback if invalid
+if (!VALID_DEPARTMENTS.includes(originalSpecialist)) {
+  console.log("⚠️ Invalid specialist fixed:", originalSpecialist);
+  originalSpecialist = "General Medicine";
+}
+
+// STEP 4: Apply corrected specialist back
+diagnosis.specialist = originalSpecialist;
+
+// STEP 5: Departments NOT available in your hospital
+const UNAVAILABLE_SPECIALISTS = [
+  'Cardiologist',
+  'Neurologist',
+  'Nephrologist',
+  'Urologist',
+  'Oncologist',
+  'Pulmonologist',
+  'Gastroenterologist',
+  'Endocrinologist'
+];
+
+// ─── STEP 6: Referral logic ─────────────────────────────
+if (UNAVAILABLE_SPECIALISTS.includes(originalSpecialist)) {
+
+  const severityText = (diagnosis.severity || "").toLowerCase();
+
+  const isHighSeverity =
+    severityText.includes('high') ||
+    severityText.includes('emergency');
+
+  if (isHighSeverity) {
+    diagnosis.availability_status = "external_referral";
+    diagnosis.referral_message =
+      `Our hospital does not have a ${originalSpecialist} specialist. ` +
+      `We recommend visiting a multi-specialty hospital. In emergency call 102/108.`;
+
+    diagnosis.specialist = null;
+
+  } else {
+    diagnosis.availability_status = "referral_needed";
+    diagnosis.referral_message =
+      `We don't have a dedicated ${originalSpecialist} specialist, ` +
+      `but our General Medicine OPD can help initially.`;
+
+    diagnosis.specialist = "General Medicine";
+  }
+
+} else {
+
+  // ─── STEP 7: Check doctor availability in DB ───────────
+
+  const normalizedSpecialist = (originalSpecialist || "").toLowerCase();
+
+  const docExists = db.getAllDoctors().some(
+    d => (d.specialization || "").toLowerCase() === normalizedSpecialist
+  );
+
+  if (docExists || originalSpecialist === "General Medicine") {
+    diagnosis.availability_status = "available";
+    diagnosis.referral_message = null;
+    diagnosis.specialist = originalSpecialist;
+
+  } else {
+    diagnosis.availability_status = "referral_needed";
+    diagnosis.referral_message =
+      `No exact match found, but General Medicine can handle initial care.`;
+
+    diagnosis.specialist = "General Medicine";
+  }
+}
+// ─── FINAL RESPONSE ─────────────────────────────
+res.json(diagnosis);
 
     } catch (error) {
         console.error('[Diagnose] Error:', error);
