@@ -52,7 +52,7 @@ function isEmergency(text) {
 }
 
 /**
- * Safe JSON Parser
+ * Safe JSON parser
  */
 function safeParseJSON(content) {
   try {
@@ -99,11 +99,11 @@ router.post("/", async (req, res) => {
         what_it_is:
           "Your symptoms may indicate an emergency medical condition.",
         why_it_happens:
-          "Some symptoms can signal serious internal problems requiring urgent care.",
+          "These symptoms may indicate a serious health emergency requiring urgent care.",
         possible_causes: [
           "Internal bleeding",
           "Heart problem",
-          "Neurological event",
+          "Stroke",
           "Severe allergic reaction"
         ],
         severity: "emergency",
@@ -113,17 +113,16 @@ router.post("/", async (req, res) => {
           "Life-threatening symptoms detected"
         ],
         self_care: [
-          "Do not drive yourself if unstable",
-          "Call emergency services",
-          "Stay with someone nearby"
+          "Do not delay treatment",
+          "Call emergency services immediately"
         ],
         recommendations: [
-          "Go to nearest ER now"
+          "Go to nearest emergency room now"
         ],
         tests_to_expect: [
           "Blood tests",
-          "Imaging",
-          "ECG"
+          "ECG",
+          "Emergency imaging"
         ],
         doctor: null,
         disclaimer:
@@ -137,11 +136,50 @@ router.post("/", async (req, res) => {
     const systemPrompt = `
 You are an advanced hospital triage AI.
 
-Analyze symptoms like a professional hospital pre-diagnosis assistant.
+Analyze symptoms carefully and return ONLY valid JSON.
 
-Return ONLY valid JSON.
+IMPORTANT SPECIALIST RULES:
 
-JSON FORMAT:
+1. Period pain, menstrual cramps, irregular periods, vaginal bleeding
+→ Obstetrics & Gynecology
+
+2. Pregnancy symptoms, pregnancy pain, pregnancy bleeding
+→ Obstetrics & Gynecology
+
+3. Child under 14 years
+→ Paediatrics
+
+4. Skin rash, itching, allergy, acne
+→ Dermatology
+
+5. Tooth pain, gums swelling, mouth pain
+→ Dental
+
+6. Anxiety, depression, panic attack, severe mood swings
+→ Psychiatry
+
+7. Neck pain, back pain, joint pain, fracture, bone pain
+→ Orthopaedics
+
+8. Ear pain, throat pain, nose blockage
+→ ENT
+
+9. Eye pain, blurred vision, eye redness
+→ Ophthalmology
+
+10. Breathing issues, cough, wheezing
+→ Pulmonology
+
+11. Chest pain, heart palpitations
+→ Cardiology
+
+12. Stomach pain, vomiting, digestion problems
+→ Gastroenterology
+
+13. If unclear:
+→ General Medicine
+
+Return ONLY JSON:
 
 {
   "condition": "",
@@ -158,58 +196,11 @@ JSON FORMAT:
   "tests_to_expect": []
 }
 
-SPECIALIST MUST BE ONLY ONE OF:
-
-[
-"General Medicine",
-"Emergency Medicine",
-"Cardiology",
-"Neurology",
-"Neurosurgery",
-"Orthopaedics",
-"Physiotherapy",
-"Pulmonology",
-"Gastroenterology",
-"Hepatology",
-"Nephrology",
-"Urology",
-"Endocrinology",
-"Dermatology",
-"Obstetrics & Gynecology",
-"Fertility Medicine",
-"Paediatrics",
-"Neonatology",
-"ENT",
-"Audiology",
-"Ophthalmology",
-"Psychiatry",
-"Psychology",
-"Dental",
-"Oral Surgery",
-"General Surgery",
-"Laparoscopic Surgery",
-"Oncology",
-"Radiation Oncology",
-"Rheumatology",
-"Infectious Disease",
-"Allergy & Immunology",
-"Hematology",
-"Vascular Surgery",
-"Plastic Surgery",
-"Pain Management",
-"Sleep Medicine",
-"Nutrition & Dietetics",
-"Sexual Health",
-"Geriatrics",
-"Sports Medicine"
-]
-
-If unclear:
-use "General Medicine"
-
-No markdown.
-No extra text.
-JSON only.
+STRICT RULES:
+- No markdown
+- No explanation outside JSON
+- No extra text
+- JSON only
 `;
 
     const userPrompt = `
@@ -236,30 +227,32 @@ ${text}
           }
         ],
         model: "llama-3.3-70b-versatile",
-        temperature: 0.2
+        temperature: 0.1
       });
 
     let content =
       aiResponse.choices[0].message.content.trim();
 
-    let diagnosis = safeParseJSON(content);
+    let diagnosis =
+      safeParseJSON(content);
 
     /**
-     * Fallback if AI breaks JSON
+     * AI fallback
      */
     if (!diagnosis) {
       diagnosis = {
         condition: "Unclear Condition",
         what_it_is:
-          "Symptoms need doctor evaluation.",
+          "Symptoms need medical evaluation.",
         why_it_happens:
-          "Many conditions can cause these symptoms.",
+          "Multiple possible causes exist.",
         explanation:
           "A doctor evaluation is recommended.",
         possible_causes: [],
         severity: "moderate",
         specialist: "General Medicine",
-        urgency: "Visit doctor within 24–48 hours",
+        urgency:
+          "Visit doctor within 24–48 hours",
         red_flags: [],
         self_care: [
           "Rest",
@@ -273,7 +266,7 @@ ${text}
     }
 
     /**
-     * Normalize department
+     * Normalize Department
      */
     const department =
       normalizeDepartment(
@@ -281,25 +274,50 @@ ${text}
       );
 
     /**
-     * Assign doctor
+     * Doctor Assignment
      */
     const doctor =
       getDoctor(department);
 
     /**
-     * Final response
+     * Debug Logs
+     */
+    console.log(
+      "AI Specialist:",
+      diagnosis.specialist
+    );
+
+    console.log(
+      "Normalized Department:",
+      department
+    );
+
+    console.log(
+      "Assigned Doctor:",
+      doctor
+    );
+
+    /**
+     * Final Response
      */
     const finalResponse = {
       emergency: false,
-      condition: diagnosis.condition,
-      what_it_is: diagnosis.what_it_is,
-      why_it_happens: diagnosis.why_it_happens,
-      explanation: diagnosis.explanation,
+      condition:
+        diagnosis.condition,
+      what_it_is:
+        diagnosis.what_it_is,
+      why_it_happens:
+        diagnosis.why_it_happens,
+      explanation:
+        diagnosis.explanation,
       possible_causes:
         diagnosis.possible_causes || [],
-      severity: diagnosis.severity,
-      specialist: department,
-      urgency: diagnosis.urgency,
+      severity:
+        diagnosis.severity,
+      specialist:
+        department,
+      urgency:
+        diagnosis.urgency,
       red_flags:
         diagnosis.red_flags || [],
       self_care:
@@ -308,18 +326,25 @@ ${text}
         diagnosis.recommendations || [],
       tests_to_expect:
         diagnosis.tests_to_expect || [],
-      doctor: doctor || null,
-      referral_message: doctor
-        ? null
-        : "No doctor available. Please visit higher medical center.",
+      doctor:
+        doctor || null,
+      referral_message:
+        doctor
+          ? null
+          : "No doctor available. Please visit higher medical center.",
       disclaimer:
         "This chatbot provides general guidance only and is not a medical diagnosis."
     };
 
-    return res.json(finalResponse);
+    return res.json(
+      finalResponse
+    );
 
   } catch (err) {
-    console.error("[Triage Error]", err);
+    console.error(
+      "[Triage Error]",
+      err
+    );
 
     return res.status(500).json({
       error:
